@@ -9,7 +9,7 @@
  */
 
 import { readFile } from "node:fs/promises";
-import { join, normalize, extname } from "node:path";
+import { join, normalize, extname, relative, sep, isAbsolute } from "node:path";
 
 import { MODEL_CATALOG, findModel, resolveModelLimits } from "./models.mjs";
 import {
@@ -79,10 +79,13 @@ export function createApp(deps) {
 
   async function serveStatic(req, res) {
     const urlPath = req.url === "/" ? "/index.html" : (req.url ?? "/");
-    // We normalize AFTER joining: any `..` that escapes publicDir yields a
-    // filePath that no longer starts with publicDir -> 403 (path traversal).
+    // We normalize AFTER joining, then require the path to sit inside publicDir
+    // by segment (not by string prefix, which a sibling like `public-secrets`
+    // would pass) -> 403 (path traversal). The URL is deliberately not
+    // percent-decoded, so `%2e%2e` or `%5c` stay literal file names.
     const filePath = normalize(join(publicDir, urlPath));
-    if (!filePath.startsWith(publicDir)) {
+    const rel = relative(publicDir, filePath);
+    if (rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
       sendJson(res, 403, { error: "Forbidden" });
       return;
     }
