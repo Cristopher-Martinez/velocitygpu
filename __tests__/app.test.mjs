@@ -1,6 +1,8 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createApp, readBody, sendJson } from "../src/app.mjs";
 
@@ -928,4 +930,75 @@ describe("serveStatic", () => {
     await handler(mockReq("GET", "/../server.mjs"), res);
     expect(res.statusCode).toBe(403);
   });
+});
+
+describe("serveStatic containment", () => {
+  let sandbox;
+  let publicDir;
+
+  beforeAll(async () => {
+    // <sandbox>/public is the served root; <sandbox>/public-secrets shares its
+    // path prefix but must stay unreachable.
+    sandbox = await mkdtemp(join(tmpdir(), "velocitygpu-static-"));
+    publicDir = join(sandbox, "public");
+    await mkdir(publicDir);
+    await mkdir(join(sandbox, "public-secrets"));
+    await writeFile(join(publicDir, "..dotted.txt"), "inside");
+    await writeFile(join(sandbox, "public-secrets", "secret.txt"), "SECRET");
+  });
+
+  afterAll(() => rm(sandbox, { recursive: true, force: true }));
+
+  async function get(url, dir = publicDir) {
+    const { handler } = makeApp({ publicDir: dir });
+    const res = mockRes();
+    await handler(mockReq("GET", url), res);
+    return res;
+  }
+
+  it("403 for a sibling directory that shares the publicDir prefix", async () => {
+    const res = await get("/../public-secrets/secret.txt");
+    expect(res.statusCode).toBe(403);
+    expect(String(res.body)).not.toContain("SECRET");
+  });
+
+  it("still serves a file whose name merely starts with two dots", async () => {
+    const res = await get("/..dotted.txt");
+    expect(res.statusCode).toBe(200);
+    expect(String(res.body)).toBe("inside");
+  });
+
+  it("tolerates a publicDir with a trailing separator", async () => {
+    expect((await get("/..dotted.txt", publicDir + "/")).statusCode).toBe(200);
+    expect((await get("/../public-secrets/secret.txt", publicDir + "/")).statusCode).toBe(403);
+  });
+
+  it.each([
+    "/%2e%2e/public-secrets/secret.txt",
+    "/..%2fpublic-secrets%2fsecret.txt",
+    "/%2e%2e%2fpublic-secrets%2fsecret.txt",
+    "/..%5cpublic-secrets%5csecret.txt",
+    "/%2e%2e%5c%2e%2e%5cserver.mjs",
+    "/..\\public-secrets\\secret.txt", // raw backslashes separate segments on Windows
+  ])("traversal variant %s never reaches a file outside publicDir", async (url) => {
+    const res = await get(url);
+    expect([403, 404]).toContain(res.statusCode);
+    expect(String(res.body)).not.toContain("SECRET");
+  });
+
+  it.each(["/%", "/%zz", "/%E0%A4%A", "/%c0%ae%c0%ae/secret.txt"])(
+    "malformed URI %s answers without crashing",
+    async (url) => {
+      const res = await get(url);
+      expect([400, 404]).toContain(res.statusCode);
+    },
+  );
+
+  it.each(["/index.html%00.png", "/\0", "/..dotted.txt\0.png"])(
+    "NUL byte in %j never serves a file",
+    async (url) => {
+      const res = await get(url);
+      expect([400, 404]).toContain(res.statusCode);
+    },
+  );
 });
