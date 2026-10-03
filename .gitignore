@@ -1,0 +1,4 @@
+# Build / test artifacts
+coverage/
+node_modules/
+.env

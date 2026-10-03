@@ -1,0 +1,28 @@
+{
+  "name": "velocitygpu",
+  "version": "0.1.0",
+  "description": "Rent a GPU on Vast.ai, serve an LLM with Ollama, and chat with it from a single page.",
+  "license": "MIT",
+  "author": "Cristopher Martinez",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cristopher-Martinez/velocitygpu.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "electron electron/main.cjs",
+    "dev:web": "node server.mjs",
+    "start": "node server.mjs",
+    "desktop": "electron electron/main.cjs",
+    "test": "vitest run --coverage --config vitest.config.mjs",
+    "e2e": "node e2e/run-e2e.mjs"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.7",
+    "electron": "^33.2.0",
+    "vitest": "^4.1.7"
+  }
+}

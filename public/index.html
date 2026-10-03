@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Velocity GPU · Rent a GPU and chat with your model</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="brand">⚡ Velocity<span>GPU</span></div>
+      <p class="tagline">
+        Pick a model, we rent a GPU machine on Vast.ai, serve it with
+        <strong>Ollama</strong> and you chat. All on one page.
+      </p>
+      <div id="account" class="account">Vast balance: <span>—</span></div>
+    </header>
+
+    <main>
+      <!-- Step 1: pick a model -->
+      <section id="step-models" class="panel">
+        <h2><span class="step">1</span> Pick a model</h2>
+        <div id="model-grid" class="model-grid">Loading models…</div>
+
+        <!-- Spec sheet: shown when a model is picked, BEFORE renting. Shows the
+             context window and other specs so the decision is made with the
+             numbers in view. -->
+        <div
+          id="model-specs"
+          class="model-specs hidden"
+          aria-live="polite"></div>
+
+        <button id="rent-btn" class="primary" disabled>
+          Rent GPU and deploy model
+        </button>
+      </section>
+
+      <!-- Step 2: deployment status -->
+      <section id="step-status" class="panel hidden">
+        <h2><span class="step">2</span> Deployment</h2>
+        <div class="status-line">
+          <span id="phase-dot" class="dot"></span>
+          <strong id="phase-label">—</strong>
+          <span
+            id="uptime"
+            class="uptime"
+            hidden
+            title="Instance uptime"
+            >⏱ 0:00</span
+          >
+        </div>
+        <p id="status-msg" class="status-msg">—</p>
+        <div id="offer-info" class="offer-info"></div>
+        <div class="status-actions">
+          <button id="destroy-btn" class="danger">Destroy instance</button>
+          <button
+            id="mark-failed-btn"
+            class="warn-btn"
+            title="Ban this host so it is never rented again">
+            👎 It didn't work (ban host)
+          </button>
+        </div>
+      </section>
+
+      <!-- Step 3: connect to opencode -->
+      <section id="step-opencode" class="panel hidden">
+        <h2><span class="step">3</span> Connect your editor (opencode)</h2>
+        <p id="oc-intro" class="oc-intro">
+          Your GPU is serving an <strong>OpenAI-compatible</strong> API through
+          Ollama. Copy the snippets below and plug it into opencode in 30
+          seconds.
+        </p>
+
+        <!-- DESKTOP mode: the app writes the config by itself. Hidden on web. -->
+        <div id="oc-auto" class="oc-auto hidden">
+          <span class="oc-badge-desktop">🖥️ Desktop app</span>
+          <button id="oc-apply-btn" class="oc-apply">
+            ⚡ Apply to opencode automatically
+          </button>
+          <p class="oc-auto-hint">
+            Writes the <code>baseURL</code> and adds the model to your
+            <code>opencode.json</code> — no manual editing.
+          </p>
+          <p id="oc-apply-result" class="oc-apply-result hidden"></p>
+        </div>
+
+        <!-- WEB mode: manual step-by-step. Hidden on desktop. -->
+        <div id="oc-manual" class="oc-manual hidden">
+          <p class="oc-or">— or configure it by hand —</p>
+
+          <label class="oc-label">Endpoint (Base URL)</label>
+          <div class="oc-copyrow">
+            <code id="oc-endpoint" class="oc-inline">—</code>
+            <button class="oc-copy" data-copy="oc-endpoint">Copy</button>
+          </div>
+
+          <label class="oc-label">1 · Check that the model responds</label>
+          <div class="oc-copyrow">
+            <code id="oc-curl" class="oc-inline">—</code>
+            <button class="oc-copy" data-copy="oc-curl">Copy</button>
+          </div>
+
+          <label class="oc-label">
+            2 · opencode config <em>(~/.config/opencode/opencode.json)</em>
+          </label>
+          <div class="oc-codewrap">
+            <button class="oc-copy oc-copy-abs" data-copy="oc-config">
+              Copy
+            </button>
+            <pre id="oc-config" class="oc-code">—</pre>
+          </div>
+
+          <p class="oc-hint">
+            3 · Open <code>opencode</code>, pick the
+            <b>Velocity GPU</b> provider and the model. Happy coding!
+          </p>
+          <p class="oc-warn">
+            ⚠️ The endpoint is exposed without authentication. That is fine for a
+            PoC; destroy the instance when you are done, or put it behind an
+            authenticating proxy.
+          </p>
+        </div>
+      </section>
+
+      <!-- Step 4: chat -->
+      <section id="step-chat" class="panel hidden">
+        <h2><span class="step">4</span> Chat</h2>
+        <div id="chat-log" class="chat-log"></div>
+        <form id="chat-form" class="chat-form">
+          <textarea
+            id="chat-input"
+            rows="2"
+            placeholder="Type your message…"
+            disabled></textarea>
+          <button id="send-btn" class="primary" disabled>Send</button>
+        </form>
+      </section>
+
+      <!-- Host memory: GPU blocklist/allowlist remembered across sessions -->
+      <section id="step-hosts" class="panel hosts-panel">
+        <h2>🧠 Host memory</h2>
+        <p class="hosts-intro">
+          The auto-pick remembers which GPU machines worked and which did not:
+          it <b>bans</b> the ones that failed and <b>prefers</b> the ones that
+          already booted fine.
+        </p>
+        <div class="hosts-cols">
+          <div class="hosts-col">
+            <h3>
+              👎 Banned <span id="bad-count" class="hosts-badge bad">0</span>
+            </h3>
+            <ul id="bad-hosts" class="hosts-list">
+              <li class="hosts-empty">No banned hosts yet.</li>
+            </ul>
+          </div>
+          <div class="hosts-col">
+            <h3>
+              👍 Known good
+              <span id="good-count" class="hosts-badge good">0</span>
+            </h3>
+            <ul id="good-hosts" class="hosts-list">
+              <li class="hosts-empty">No hosts recorded yet.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>PoC · rent a GPU, serve an LLM, chat with it</footer>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
