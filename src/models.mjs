@@ -157,31 +157,6 @@ export const MODEL_CATALOG = [
     approxDph: 0.45,
     blurb: "Google's Gemma 2 27B Q4 on a single 24GB GPU. Strong at reasoning.",
   },
-  // -- Exotic · uncensored fine-tune with thinking · community GGUF --
-  {
-    id: "gemma4-31b-deckard",
-    label: "Gemma 4 31B DECKARD HERETIC (uncensored, thinking)",
-    // GGUF of the SAME fine-tune we used to serve as NVFP4. Ollama pulls it
-    // straight from HuggingFace through the hf.co/ prefix. Q4_K_M fits in 32GB
-    // and, being a GGUF (llama.cpp), runs on any Turing+ GPU: it NO longer
-    // requires Blackwell.
-    ollamaTag:
-      "hf.co/mradermacher/gemma-4-31B-it-The-DECKARD-HERETIC-UNCENSORED-Thinking-GGUF:Q4_K_M",
-    repo: "hf.co/mradermacher/gemma-4-31B-it-The-DECKARD-HERETIC-UNCENSORED-Thinking-GGUF",
-    engine: "ollama",
-    params: 31,
-    tensorParallel: 1,
-    // GGUF Q4_K_M ~19GB + KV cache + overhead. We ask for >= 32GB to leave headroom.
-    minTotalVramGb: 32,
-    diskGb: 60,
-    gated: false,
-    budget: true,
-    contextLen: 32768,
-    maxDphTotal: 1.0,
-    approxDph: 0.5,
-    blurb:
-      "Gemma 4 31B uncensored with thinking, as a Q4 GGUF. Runs on an RTX 3090/4090 (~$0.08-0.30/h). No Blackwell needed.",
-  },
 ];
 
 /** Looks up a model by id; null if it does not exist. */

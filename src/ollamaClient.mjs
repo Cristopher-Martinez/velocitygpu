@@ -82,7 +82,7 @@ export async function pullModelStreaming(endpoint, modelTag, fetchImpl, onProgre
 }
 
 /** Warmup timeout. A large model's (30B+) cold start from disk into VRAM takes
- *  tens of seconds to minutes; 5 min covers the 31B model with margin without
+ *  tens of seconds to minutes; 5 min covers the 32B model with margin without
  *  hanging forever if something really goes wrong. */
 const WARMUP_TIMEOUT_MS = 5 * 60 * 1000;
 

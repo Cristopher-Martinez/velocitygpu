@@ -35,13 +35,10 @@ describe("MODEL_CATALOG", () => {
     }
   });
 
-  it("includes the exotic DECKARD as a GGUF pulled from HuggingFace (hf.co/)", () => {
-    const deckard = findModel("gemma4-31b-deckard");
-    expect(deckard).not.toBeNull();
-    expect(deckard.engine).toBe("ollama");
-    expect(deckard.ollamaTag.startsWith("hf.co/")).toBe(true);
-    // It NO longer requires Blackwell: the GGUF runs on any Turing+ GPU through the global floor.
-    expect(deckard.minComputeCap).toBeUndefined();
+  it("curates only official Ollama library models (no community fine-tunes)", () => {
+    for (const m of MODEL_CATALOG) {
+      expect(m.repo).toBe(`ollama.com/library/${m.ollamaTag}`);
+    }
   });
 });
 
