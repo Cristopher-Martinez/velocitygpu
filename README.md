@@ -21,7 +21,7 @@ Flow on screen: **pick a model, rent, watch the deployment live, chat.**
 5. Streams chat completions through the server to the rented box.
 6. Destroys the instance on demand, optionally flagging the host as bad.
 
-The catalog has six models, all quantized GGUF files that fit on one GPU: Qwen2.5 7B, 14B and 32B, Llama 3.1 8B, Gemma 2 27B, and a community Gemma-based fine-tune pulled from Hugging Face.
+The catalog has five models, all quantized GGUF files from the official Ollama library that fit on one GPU: Qwen2.5 7B, 14B and 32B, Llama 3.1 8B, and Gemma 2 27B.
 
 ## Architecture
 
