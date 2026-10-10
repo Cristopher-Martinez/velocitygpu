@@ -110,7 +110,7 @@ Remember to destroy the instance when you are done: it bills until you do.
 npm test
 ```
 
-241 tests in 11 suites, with `src/` coverage around 99% for statements and lines, 100% for functions and 96% for branches.
+257 tests in 11 suites, with `src/` coverage around 99% for statements and lines, 100% for functions and 96% for branches.
 
 Coverage is gated at 95% for statements, branches, functions and lines over `src/`. `server.mjs` is bootstrap wiring and is covered by a startup smoke test instead. The suites run the real modules with injected fakes for the Vast API, Ollama, the filesystem and timers, so no test needs a GPU, an API key or internet access.
 
